@@ -7,9 +7,9 @@ built on top of SQLite. Underverse has a full-fledged MapReduce capability as we
 Documentation
 -------------
 
-Can be found on `PyPi <http://packages.python.org/underverse>`.
+Can be found on `PyPi <http://packages.python.org/underverse>`_.
 
 Change Log
 ----------
 
-The change log can be found `here <http://packages.python.org/underverse/#change-log>`.
+The change log can be found `here <http://packages.python.org/underverse/#change-log>`_.
