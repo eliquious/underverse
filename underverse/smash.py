@@ -1,5 +1,9 @@
 """
-"Smash" is short-hand for Sum-Hash. This extension is essentially a multi-dimensional, 
+
+Smash Trees
+===========
+
+"Smash" is short-hand for Sum-Hash. This extension is essentially a multi-dimensional (ie. nested),
 hierarchical hash structure which stores all the distinct combinations across 
 all dimensions. It also stores the number of times that combination has been
 encountered, hence the name "sum-hash". Because it it hash-based, only the unique 
@@ -30,87 +34,104 @@ Similar to Underverse, this extension returns a dictionary-producing generator a
 the resultset for queries. Therefore, all functionality of Underverse is available
 through the `SubVerse` class.
 
+Performance
+-----------
+
 .. admonition:: Performance Hint
     :class: perf
 
     The hash tree algorithm has shown considerable performance capability over SQLite 
     in-memory databases. The tables below show insert and query speeds for various 
     analysis modules I have written.
+
+
+**Insert Times**
+
+The insert table shows the times it took to insert 50k rows of data with 5 columns.
+The data consisted of a list of people with names, gender, age, college and 
+number of friends.
+
+.. raw:: html
+
+    <br \>
+    <div style="width:90%" id="main">
+      <table class="ctable" id="ins_speed_comparison">
+          <thead>
+            <tr>
+                <td>Module</td>
+                <td>Execution Time (Rows / Sec)</td>
+                <td>Built on top of</td>
+            </tr>
+          </thead>
+        <tbody>
+            <tr>
+              <td>Smash Tree</td>
+              <td>0.947s (52829.0)</td>
+              <td>Python dict</td>
+            </tr>
+            <tr>
+              <td>Bops</td>
+              <td>1.585s (31537.0)</td>
+              <td>NumPy</td>
+            </tr>
+            <tr>
+              <td>Underverse</td>
+              <td>9.289s (5382.6)</td>
+              <td>SQLite (in-memory)</td>
+            </tr>
+        </tbody>
+      </table>
+    </div>
+
+**Query Times**
+
+The query table shows the time it took to find the number of rows which matched:
     
-    **Data**
+    * gender:  "M"
+    * college: 3
+    * name:    "Max"
 
-    The insert table shows the times it took to insert 50k rows of data with 5 columns.
-    The data consisted of a list of people with names, gender, age, college and 
-    number of friends.
+.. raw:: html
 
-    The query table shows the time it took to find the number of rows which matched:
-        
-        * gender:  "M"
-        * college: 3
-        * name:    "Max"
+    <br \>
+    <div style="width:90%" id="main">
+      <table class="ctable" id="query_speed_comparison">
+          <thead>
+            <tr>
+                <td>Module</td>
+                <td>Execution Time</td>
+                <td>Built on top of</td>
+            </tr>
+          </thead>
+        <tbody>
+            <tr>
+              <td>Smash Tree (cached)</td>
+              <td><b>0.000016s</b></td>
+              <td>Python dict</td>
+            </tr>
+            <tr>
+              <td>Smash Tree (query)</td>
+              <td><b>0.002s</b></td>
+              <td>Python dict</td>
+            </tr>
+            <tr>
+              <td>Bops</td>
+              <td><b>0.008s</b></td>
+              <td>NumPy</td>
+            </tr>
+            <tr>
+              <td>Underverse</td>
+              <td><b>17.073s</b></td>
+              <td>SQLite (in-memory)</td>
+            </tr>
+        </tbody>
+      </table>
+    </div>
+    <br \>
 
 
-    .. raw:: html
-
-        <br \>
-        <div style="width:90%" id="main">
-          <table class="ctable" id="ins_speed_comparison">
-              <thead>
-                <tr>
-                    <td>Module</td>
-                    <td>Execution Time (Rows / Sec)</td>
-                    <td>Built on top of</td>
-                </tr>
-              </thead>
-            <tbody>
-                <tr>
-                  <td>Smash Tree</td>
-                  <td>0.947s (52829.0)</td>
-                  <td>Python dict</td>
-                </tr>
-                <tr>
-                  <td>Bops</td>
-                  <td>1.585s (31537.0)</td>
-                  <td>NumPy</td>
-                </tr>
-                <tr>
-                  <td>Underverse</td>
-                  <td>9.289s (5382.6)</td>
-                  <td>SQLite (in-memory)</td>
-                </tr>
-            </tbody>
-          </table>
-        </div>
-        <br \>
-        <div style="width:90%" id="main">
-          <table class="ctable" id="query_speed_comparison">
-              <thead>
-                <tr>
-                    <td>Module</td>
-                    <td>Execution Time</td>
-                    <td>Built on top of</td>
-                </tr>
-              </thead>
-            <tbody>
-                <tr>
-                  <td>Smash Tree</td>
-                  <td>0.002s</td>
-                  <td>Python dict</td>
-                </tr>
-                <tr>
-                  <td>Bops</td>
-                  <td>0.008s</td>
-                  <td>NumPy</td>
-                </tr>
-                <tr>
-                  <td>Underverse</td>
-                  <td>17.073s</td>
-                  <td>SQLite (in-memory)</td>
-                </tr>
-            </tbody>
-          </table>
-        </div>
-        <br \>
+Module Documentation
+====================
 
 """
 
@@ -184,7 +205,44 @@ class Node(Item):
         return self.children[attr]
 
 class Tree(Node):
-    """Base class for the module."""
+    """
+    Base class for the module. This class manages the inserting and querying 
+    capability of the hash tree.
+
+    This data structure can be initialized with the hierarchical structure already in 
+    place. All this does is set the order of the hash keys. If new data attributes 
+    are encoutered, they are simply appended to the end.
+
+    .. code-block:: python
+
+        tree = Tree(names=["gender", "college", "name", "age", "friends"])
+
+    The test data used with this structure is outlined below. Here's a list of the 
+    dimensions and their number of unique values.
+
+        * Gender: M/F
+        * College: 0-4 years
+        * Name: 30 names
+        * Age: 18-80 years old
+        * Friends: 0-500 friends
+
+    As you can see, the dimensions are ordered by the number of unique values. This 
+    increases the speed of the algorithm by reducing the size of the search space as 
+    you traverse down the tree.
+
+    In other words, if you are looking for all males who have at least 3 years of
+    college, you can slice the search space in half in the first dimension and then 
+    again when you get to the college dimension.
+
+    .. admonition:: Performance Hint
+        :class: perf
+
+        To get the maximum performance out of the module, organize the dimensions 
+        by the order of possible unique values. Most likely you will have numerical 
+        data for some dimensions, therefore these should go near the end unless you 
+        are certain there are only a few possible numbers. 
+
+    """
     def __init__(self, name="root", value="root", names=[]):
         super(Tree, self).__init__(name)
         self.names = names
@@ -194,6 +252,22 @@ class Tree(Node):
     def put(self, **kwargs):
         """
         This method inserts a multi-dimensional key-value pair into the data store.
+
+        **Inserting Data**::
+
+            # Initialize structure
+            # This will create the order of a 5+ dimensional hash
+            tree = Tree(names=["gender", "college", "name", "age", "friends"])
+
+            # open / read file
+            with open('people.csv', 'r') as fh:
+                fh.readline()
+                for line in fh:
+                    words =line.strip("\\n").split(",")
+
+                    # Insert data one row at a time
+                    bt.put(name=words[0], gender=words[1], age=int(words[2]), college=int(words[3]), friends=int(words[4]))
+
         """
         current = self
         self.count += 1
@@ -214,13 +288,11 @@ class Tree(Node):
                     current = current.children[kwargs[name]].incr()
                 else:
                     current = current.insert(kwargs[name], Tree(name, kwargs[name], names=self.names[i:len(self.names)]))
-                    # current = current.children[kwargs[name]].incr()
             else:
                 if "None" in current.children:
                     current = current.children["None"].incr()
                 else:
                     current = current.insert("None", Tree(name, "None", names=self.names[i:len(self.names)]))
-                    # current = current.children["None"].incr()
 
     def _is_filtered(self, conditions):
         if not conditions:
@@ -238,6 +310,15 @@ class Tree(Node):
         """
         This method is used to filter data. It produces a generator of dictionaries
         matching the filters.
+
+        :param unique: if `True`, then paths will be repeated if their count > 1
+        :type unique: boolean
+        :param objectify: returns NecRows instead of regular dictionaries. This gives you `dot.syntax`.
+        :type objectify: boolean
+        :param filters: essentially a `WHERE` clause; this must be a `dict` of dimensions and the values you are searching for. The values an be functions / lambdas to get more complex queries.
+        :type filters: dict
+        :rtype: generator of dicts
+
         """
         for child in self:
             if not child._is_filtered(filters):
@@ -260,6 +341,12 @@ class Tree(Node):
         """
         This method is used to filter data. It produces a generator of lists
         matching the filters.
+
+        :param unique: if `True`, then paths will be repeated if their count > 1
+        :type unique: boolean
+        :param filters: essentially a `WHERE` clause; this must be a `dict` of dimensions and the values you are searching for. The values an be functions / lambdas to get more complex queries.
+        :type filters: dict
+        :rtype: generator of lists
         """
         for child in self:
             if not child._is_filtered(filters):
@@ -499,7 +586,6 @@ class Tree(Node):
         return len(self.children)
 
     def __repr__(self):
-        # return "<Node: %s=%s (%s:%s)>" % (self.attr, self.value, len(self.children), self.count)
         return "<%s: %s (%s:%s)>" % (self.attr, self.value, len(self.children), self.count)
 
 if __name__ == '__main__':

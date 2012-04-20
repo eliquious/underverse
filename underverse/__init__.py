@@ -14,7 +14,7 @@ should feel right at home.
 
   Underverse is now **beta** due to the arrival of v0.3. However, there may still be uncovered bugs or unexpected errors waiting to be found. I'm continually working to increase the test coverage and to update the docs.
 
-  If bugs are found, please join the `Google Group <http://groups.google.com/group/python-underverse>`_ and post the issue. Suggestions are also welcome. The project will be on github soon.
+  If bugs are found, please join the `Google Group <http://groups.google.com/group/python-underverse>`_ and post the issue. Suggestions are also welcome.
 
 
 .. warning::
@@ -23,6 +23,9 @@ should feel right at home.
 
   If you are using any ``mapreduce`` functionality, version 0.4.0 will likely fix any issues you have found.
 
+**GitHub**
+
+This module can now be found on `GitHub <https://github.com/eliquious/underverse>`_.
 
 What is Underverse?
 ===================
