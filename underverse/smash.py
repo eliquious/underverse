@@ -334,7 +334,9 @@ class Tree(Node):
                             n = NecRow(grand)
                             yield n
                         else:
-                            grand[self.name] = self.value
+                            if self.name != "root":
+                                grand[self.name] = self.value
+                                grand[child.name] = child.value
                             yield grand
     
     def query_list(self, unique=True, filters=None):
